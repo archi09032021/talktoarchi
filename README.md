@@ -1,15 +1,31 @@
 # Talk to Archi
 
-An AI-powered digital twin of Archishman Choudhury. Not a chatbot, resume, or portfolio — the goal is that talking to it feels like actually talking to him.
+Live implementation of the "Talk to Archi" design (see `../README.md` and `../chats/chat1.md` for the original design brief and decisions). Next.js App Router + a server-side streaming route that calls the real Anthropic API — this is not the design-tool prototype, it actually answers.
 
-**The real, deployable app lives in [`web/`](./web) — see [`web/README.md`](./web/README.md) to run or deploy it.**
+## Run locally
 
-## Repo layout
+```bash
+npm install
+cp .env.example .env.local   # then fill in ANTHROPIC_API_KEY
+npm run dev
+```
 
-- **`web/`** — the live implementation: a Next.js app with a real streaming Claude backend. This is what you run or deploy.
-- **`project/`** — the original Claude Design handoff bundle (HTML/CSS/JS prototype, resume, knowledge base) that `web/` was built from.
-- **`chats/`** — the design conversation transcript that shaped the brief in `project/CLAUDE.md`.
+Open http://localhost:3000.
 
-## Deploying
+## Environment variables
 
-`web/` is a standard Next.js app. On Vercel (or similar): import this repo, set the project's **Root Directory to `web`**, and add an `ANTHROPIC_API_KEY` environment variable. See `web/README.md` for details.
+- `ANTHROPIC_API_KEY` (required) — your Anthropic API key. The chat route (`app/api/chat/route.ts`) is the only place it's used; it never reaches the browser.
+- `ARCHI_MODEL` (optional) — overrides the model id, defaults to `claude-sonnet-5`.
+
+## Layout
+
+- `app/page.tsx` + `components/TalkToArchi.tsx` — the app: landing → chat state machine, localStorage persistence, easter-egg commands.
+- `app/api/chat/route.ts` — streams a real Anthropic completion back to the browser as NDJSON, stripping the persona's `FOLLOWUPS:` trailer out of the visible reply and delivering it as a separate `followups` list.
+- `lib/persona.ts` — the system prompt + knowledge base (server-only; ported from `../project/knowledge/persona.js`).
+- `lib/commands.ts` — client-safe suggested prompts + `/slash` command map.
+- `lib/streamSplitter.ts` — the marker-stripping logic used by the API route.
+- `lib/markdown.tsx` — small Markdown → React renderer for assistant replies (no `dangerouslySetInnerHTML`).
+
+## Deploy
+
+Any Next.js host works (Vercel, etc.) — set `ANTHROPIC_API_KEY` in the host's environment variables and deploy the `web/` directory.
